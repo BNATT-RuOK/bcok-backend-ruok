@@ -1,67 +1,76 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
-import { CreateEmergencyDto, EmergencyStatus } from './dto/create-emergency.dto';
-import { Emergency } from './entities/emergency.entity';
+import { PrismaService } from '../../prisma.service';
+import { NotificationService } from '../notification/notification.service';
+import { CreateEmergencyDto } from './dto/create-emergency.dto';
 
 @Injectable()
 export class EmergencyService {
   private readonly logger = new Logger(EmergencyService.name);
 
-  // ── In-memory store with seed data ────────────────────────────────────────
-  private emergencies: Emergency[] = [
-    {
-      id: 1,
-      userId: 1,
-      location: '10.7769,106.7009',
-      status: EmergencyStatus.RESOLVED,
-      timestamp: '2025-03-10T14:22:00.000Z',
-      createdAt: new Date('2025-03-10T14:22:00Z').toISOString(),
-    },
-    {
-      id: 2,
-      userId: 2,
-      location: '21.0285,105.8542',
-      status: EmergencyStatus.SOS,
-      timestamp: '2025-04-17T08:05:00.000Z',
-      createdAt: new Date('2025-04-17T08:05:00Z').toISOString(),
-    },
-  ];
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationService: NotificationService
+  ) {}
 
-  private nextId = 3;
+  async triggerSos(dto: CreateEmergencyDto) {
+    this.logger.error(`KÍCH HOẠT SOS TỪ USER ID: ${dto.userId}`);
+    //Luu trang thai SOS vao DB
+    const sosAlert = await this.prisma.sOS_ALERT.create(
+      {
+        data: {
+          user_id: dto.userId,
+          trigger_type: 'MANUAL_SOS', //Bam nut vat ly/tren app
+          latitude: dto.latitude,
+          longitude: dto.longitude,
+          photo_url: dto.photoUrl,
+          status: 'ACTIVE',
+        },
+      });
+  
+  const user=await this.prisma.uSER.findUnique({
+     where: { user_id: dto.userId },
+     include: { CONTACT: true },
+  });
 
-  // ── CREATE ─────────────────────────────────────────────────────────────────
-  create(dto: CreateEmergencyDto): Emergency {
-    const emergency: Emergency = {
-      id: this.nextId++,
-      ...dto,
-      createdAt: new Date().toISOString(),
-    };
-    this.emergencies.push(emergency);
-    this.logger.warn(`🆘 New SOS alert #${emergency.id} from user #${dto.userId} at ${dto.location}`);
-    return emergency;
-  }
-
-  // ── READ ALL ───────────────────────────────────────────────────────────────
-  findAll(): Emergency[] {
-    return this.emergencies;
-  }
-
-  // ── READ ONE ───────────────────────────────────────────────────────────────
-  findOne(id: number): Emergency {
-    const emergency = this.emergencies.find((e) => e.id === id);
-    if (!emergency) {
-      throw new NotFoundException(`Emergency alert #${id} not found`);
+  if (!user)
+    throw new NotFoundException('Người dùng không tồn tại');
+  
+  const userName = user.full_name || `User #${dto.userId}`;
+  const studentPhone = user.phone_number ? `(SĐT: ${user.phone_number})` : '';
+  const locationInfo = (dto.latitude && dto.longitude)
+      ? `Vị trí hiện tại: https://maps.google.com/?q=${dto.latitude},${dto.longitude}`
+      : 'Không xác định được vị trí GPS.';
+  
+  const contacts = user.CONTACT || [];
+  for (const contact of contacts) {
+    const alertTitle = `CẤP CỨU RUOK: ${userName} ĐANG GẶP NGUY HIỂM!`;
+    const alertMsgPlain = `Hệ thống nhận được tín hiệu SOS khẩn cấp từ ${userName} ${studentPhone}.\n${locationInfo}\nVui lòng liên lạc hoặc báo cơ quan chức năng ngay lập tức!`;
+    const alertMsgHtml = alertMsgPlain.replace(/\n/g, '<br>');
+    //Gui Email neu co
+    if (contact.email) {
+      await this.notificationService.sendAlertEmail(contact.email, alertTitle, alertMsgHtml);
     }
-    return emergency;
-  }
-
-  // ── DELETE ─────────────────────────────────────────────────────────────────
-  remove(id: number): { message: string } {
-    const index = this.emergencies.findIndex((e) => e.id === id);
-    if (index === -1) {
-      throw new NotFoundException(`Emergency alert #${id} not found`);
+    
+    if (contact.expo_push_token) {
+      await this.notificationService.sendPushNotification(
+        contact.expo_push_token, 
+        alertTitle, 
+        alertMsgPlain);
+    } else {
+      this.logger.warn(`Người thân ${contact.contact_phone} chưa cài App (Không có Push Token).`);
     }
-    this.emergencies.splice(index, 1);
-    this.logger.log(`Removed emergency alert #${id}`);
-    return { message: `Emergency alert #${id} deleted successfully` };
+
+    await this.prisma.nOTIFICATION.create({
+      data: {
+        user_id: user.user_id,
+        sos_id: sosAlert.sos_id,
+        contact_phone: contact.contact_phone,
+        notification_type: 'EMERGENCY_SOS',
+        status: 'SENT',
+      },
+    });
   }
+  return sosAlert;
+  }
+  
 }

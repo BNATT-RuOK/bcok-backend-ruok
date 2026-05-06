@@ -1,10 +1,11 @@
 export declare enum CheckinStatus {
+    PENDING = "PENDING",
+    IN_TRANSIT = "IN_TRANSIT",
     SAFE = "SAFE",
-    IN_TRANSIT = "IN_TRANSIT"
+    MISSED = "MISSED"
 }
 export declare class CreateCheckinDto {
     userId: number;
-    location: string;
-    status: CheckinStatus;
-    timestamp: string;
+    scheduledTime?: string;
+    status?: CheckinStatus;
 }

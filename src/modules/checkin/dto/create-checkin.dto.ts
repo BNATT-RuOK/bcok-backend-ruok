@@ -1,42 +1,23 @@
-import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsDateString,
-  IsEnum,
-  IsNotEmpty,
-  IsNumber,
-  IsString,
-} from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsEnum, IsDateString } from 'class-validator';
 
+// Định nghĩa Enum cho status khớp với DB (Có thể mở rộng thêm)
 export enum CheckinStatus {
-  SAFE = 'SAFE',
+  PENDING = 'PENDING',
   IN_TRANSIT = 'IN_TRANSIT',
+  SAFE = 'SAFE',
+  MISSED = 'MISSED',
 }
 
 export class CreateCheckinDto {
-  @ApiProperty({ example: 1, description: 'ID of the user checking in' })
-  @IsNumber()
-  userId: number;
+  @IsInt({ message: 'User ID phải là một số nguyên' })
+  @IsNotEmpty({ message: 'Không được bỏ trống User ID' })
+  userId: number; // FE gui len camelCase
 
-  @ApiProperty({
-    example: 'Vincom Center, Bến Nghé, Quận 1, TP.HCM',
-    description: 'Location description or GPS coordinates',
-  })
-  @IsString()
-  @IsNotEmpty()
-  location: string;
+  @IsDateString({}, { message: 'Thời gian dự kiến phải đúng chuẩn ISO 8601' })
+  @IsOptional()
+  scheduledTime?: string; // FE gui len camelCase
 
-  @ApiProperty({
-    enum: CheckinStatus,
-    example: CheckinStatus.SAFE,
-    description: '"SAFE" when arrived, "IN_TRANSIT" when still moving',
-  })
-  @IsEnum(CheckinStatus)
-  status: CheckinStatus;
-
-  @ApiProperty({
-    example: '2025-04-17T10:00:00.000Z',
-    description: 'ISO 8601 timestamp of the check-in',
-  })
-  @IsDateString()
-  timestamp: string;
+  @IsEnum(CheckinStatus, { message: 'Trạng thái không hợp lệ' })
+  @IsOptional()
+  status?: CheckinStatus;
 }
