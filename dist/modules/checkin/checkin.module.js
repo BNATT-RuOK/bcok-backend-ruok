@@ -10,13 +10,16 @@ exports.CheckinModule = void 0;
 const common_1 = require("@nestjs/common");
 const checkin_controller_1 = require("./checkin.controller");
 const checkin_service_1 = require("./checkin.service");
+const prisma_service_1 = require("../../prisma.service");
+const notification_module_1 = require("../notification/notification.module");
 let CheckinModule = class CheckinModule {
 };
 exports.CheckinModule = CheckinModule;
 exports.CheckinModule = CheckinModule = __decorate([
     (0, common_1.Module)({
+        imports: [notification_module_1.NotificationModule],
         controllers: [checkin_controller_1.CheckinController],
-        providers: [checkin_service_1.CheckinService],
+        providers: [checkin_service_1.CheckinService, prisma_service_1.PrismaService],
     })
 ], CheckinModule);
 //# sourceMappingURL=checkin.module.js.map

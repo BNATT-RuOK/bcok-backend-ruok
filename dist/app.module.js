@@ -13,12 +13,13 @@ const app_service_1 = require("./app.service");
 const users_module_1 = require("./modules/users/users.module");
 const emergency_module_1 = require("./modules/emergency/emergency.module");
 const checkin_module_1 = require("./modules/checkin/checkin.module");
+const schedule_1 = require("@nestjs/schedule");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [users_module_1.UsersModule, emergency_module_1.EmergencyModule, checkin_module_1.CheckinModule],
+        imports: [users_module_1.UsersModule, emergency_module_1.EmergencyModule, checkin_module_1.CheckinModule, schedule_1.ScheduleModule.forRoot()],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
     })
