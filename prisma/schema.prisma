@@ -23,6 +23,7 @@ model CONTACT {
   email         String?        @db.VarChar
   contact_name  String?        @db.VarChar
   relationship  String?        @db.VarChar
+  expo_push_token   String?    @db.VarChar
   USER          USER           @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
   NOTIFICATION  NOTIFICATION[]
 
