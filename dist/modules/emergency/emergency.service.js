@@ -5,66 +5,75 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
 var EmergencyService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EmergencyService = void 0;
 const common_1 = require("@nestjs/common");
-const create_emergency_dto_1 = require("./dto/create-emergency.dto");
+const prisma_service_1 = require("../../prisma.service");
+const notification_service_1 = require("../notification/notification.service");
 let EmergencyService = EmergencyService_1 = class EmergencyService {
-    constructor() {
+    constructor(prisma, notificationService) {
+        this.prisma = prisma;
+        this.notificationService = notificationService;
         this.logger = new common_1.Logger(EmergencyService_1.name);
-        this.emergencies = [
-            {
-                id: 1,
-                userId: 1,
-                location: '10.7769,106.7009',
-                status: create_emergency_dto_1.EmergencyStatus.RESOLVED,
-                timestamp: '2025-03-10T14:22:00.000Z',
-                createdAt: new Date('2025-03-10T14:22:00Z').toISOString(),
+    }
+    async triggerSos(dto) {
+        this.logger.error(`KÍCH HOẠT SOS TỪ USER ID: ${dto.userId}`);
+        const sosAlert = await this.prisma.sOS_ALERT.create({
+            data: {
+                user_id: dto.userId,
+                trigger_type: 'MANUAL_SOS',
+                latitude: dto.latitude,
+                longitude: dto.longitude,
+                photo_url: dto.photoUrl,
+                status: 'ACTIVE',
             },
-            {
-                id: 2,
-                userId: 2,
-                location: '21.0285,105.8542',
-                status: create_emergency_dto_1.EmergencyStatus.SOS,
-                timestamp: '2025-04-17T08:05:00.000Z',
-                createdAt: new Date('2025-04-17T08:05:00Z').toISOString(),
-            },
-        ];
-        this.nextId = 3;
-    }
-    create(dto) {
-        const emergency = {
-            id: this.nextId++,
-            ...dto,
-            createdAt: new Date().toISOString(),
-        };
-        this.emergencies.push(emergency);
-        this.logger.warn(`🆘 New SOS alert #${emergency.id} from user #${dto.userId} at ${dto.location}`);
-        return emergency;
-    }
-    findAll() {
-        return this.emergencies;
-    }
-    findOne(id) {
-        const emergency = this.emergencies.find((e) => e.id === id);
-        if (!emergency) {
-            throw new common_1.NotFoundException(`Emergency alert #${id} not found`);
+        });
+        const user = await this.prisma.uSER.findUnique({
+            where: { user_id: dto.userId },
+            include: { CONTACT: true },
+        });
+        if (!user)
+            throw new common_1.NotFoundException('Người dùng không tồn tại');
+        const userName = user.full_name || `User #${dto.userId}`;
+        const studentPhone = user.phone_number ? `(SĐT: ${user.phone_number})` : '';
+        const locationInfo = (dto.latitude && dto.longitude)
+            ? `Vị trí hiện tại: https://maps.google.com/?q=${dto.latitude},${dto.longitude}`
+            : 'Không xác định được vị trí GPS.';
+        const contacts = user.CONTACT || [];
+        for (const contact of contacts) {
+            const alertTitle = `CẤP CỨU RUOK: ${userName} ĐANG GẶP NGUY HIỂM!`;
+            const alertMsgPlain = `Hệ thống nhận được tín hiệu SOS khẩn cấp từ ${userName} ${studentPhone}.\n${locationInfo}\nVui lòng liên lạc hoặc báo cơ quan chức năng ngay lập tức!`;
+            const alertMsgHtml = alertMsgPlain.replace(/\n/g, '<br>');
+            if (contact.email) {
+                await this.notificationService.sendAlertEmail(contact.email, alertTitle, alertMsgHtml);
+            }
+            if (contact.expo_push_token) {
+                await this.notificationService.sendPushNotification(contact.expo_push_token, alertTitle, alertMsgPlain);
+            }
+            else {
+                this.logger.warn(`Người thân ${contact.contact_phone} chưa cài App (Không có Push Token).`);
+            }
+            await this.prisma.nOTIFICATION.create({
+                data: {
+                    user_id: user.user_id,
+                    sos_id: sosAlert.sos_id,
+                    contact_phone: contact.contact_phone,
+                    notification_type: 'EMERGENCY_SOS',
+                    status: 'SENT',
+                },
+            });
         }
-        return emergency;
-    }
-    remove(id) {
-        const index = this.emergencies.findIndex((e) => e.id === id);
-        if (index === -1) {
-            throw new common_1.NotFoundException(`Emergency alert #${id} not found`);
-        }
-        this.emergencies.splice(index, 1);
-        this.logger.log(`Removed emergency alert #${id}`);
-        return { message: `Emergency alert #${id} deleted successfully` };
+        return sosAlert;
     }
 };
 exports.EmergencyService = EmergencyService;
 exports.EmergencyService = EmergencyService = EmergencyService_1 = __decorate([
-    (0, common_1.Injectable)()
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        notification_service_1.NotificationService])
 ], EmergencyService);
 //# sourceMappingURL=emergency.service.js.map

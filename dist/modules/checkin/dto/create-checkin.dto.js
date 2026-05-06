@@ -10,45 +10,30 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateCheckinDto = exports.CheckinStatus = void 0;
-const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
 var CheckinStatus;
 (function (CheckinStatus) {
-    CheckinStatus["SAFE"] = "SAFE";
+    CheckinStatus["PENDING"] = "PENDING";
     CheckinStatus["IN_TRANSIT"] = "IN_TRANSIT";
+    CheckinStatus["SAFE"] = "SAFE";
+    CheckinStatus["MISSED"] = "MISSED";
 })(CheckinStatus || (exports.CheckinStatus = CheckinStatus = {}));
 class CreateCheckinDto {
 }
 exports.CreateCheckinDto = CreateCheckinDto;
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 1, description: 'ID of the user checking in' }),
-    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsInt)({ message: 'User ID phải là một số nguyên' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Không được bỏ trống User ID' }),
     __metadata("design:type", Number)
 ], CreateCheckinDto.prototype, "userId", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({
-        example: 'Vincom Center, Bến Nghé, Quận 1, TP.HCM',
-        description: 'Location description or GPS coordinates',
-    }),
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsDateString)({}, { message: 'Thời gian dự kiến phải đúng chuẩn ISO 8601' }),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
-], CreateCheckinDto.prototype, "location", void 0);
+], CreateCheckinDto.prototype, "scheduledTime", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({
-        enum: CheckinStatus,
-        example: CheckinStatus.SAFE,
-        description: '"SAFE" when arrived, "IN_TRANSIT" when still moving',
-    }),
-    (0, class_validator_1.IsEnum)(CheckinStatus),
+    (0, class_validator_1.IsEnum)(CheckinStatus, { message: 'Trạng thái không hợp lệ' }),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreateCheckinDto.prototype, "status", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({
-        example: '2025-04-17T10:00:00.000Z',
-        description: 'ISO 8601 timestamp of the check-in',
-    }),
-    (0, class_validator_1.IsDateString)(),
-    __metadata("design:type", String)
-], CreateCheckinDto.prototype, "timestamp", void 0);
 //# sourceMappingURL=create-checkin.dto.js.map

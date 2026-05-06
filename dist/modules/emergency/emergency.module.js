@@ -10,13 +10,16 @@ exports.EmergencyModule = void 0;
 const common_1 = require("@nestjs/common");
 const emergency_controller_1 = require("./emergency.controller");
 const emergency_service_1 = require("./emergency.service");
+const prisma_service_1 = require("../../prisma.service");
+const notification_module_1 = require("../notification/notification.module");
 let EmergencyModule = class EmergencyModule {
 };
 exports.EmergencyModule = EmergencyModule;
 exports.EmergencyModule = EmergencyModule = __decorate([
     (0, common_1.Module)({
+        imports: [notification_module_1.NotificationModule],
         controllers: [emergency_controller_1.EmergencyController],
-        providers: [emergency_service_1.EmergencyService],
+        providers: [emergency_service_1.EmergencyService, prisma_service_1.PrismaService],
     })
 ], EmergencyModule);
 //# sourceMappingURL=emergency.module.js.map
