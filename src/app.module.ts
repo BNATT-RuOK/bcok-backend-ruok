@@ -6,9 +6,10 @@ import { EmergencyModule } from './modules/emergency/emergency.module';
 import { CheckinModule } from './modules/checkin/checkin.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ContactModule } from './modules/contact/contact.module';
 
 @Module({
-  imports: [UsersModule, EmergencyModule, CheckinModule, AuthModule, ScheduleModule.forRoot()],
+  imports: [UsersModule, EmergencyModule, CheckinModule, AuthModule, ContactModule, ScheduleModule.forRoot()],
   controllers: [AppController],
   providers: [AppService],
 })
