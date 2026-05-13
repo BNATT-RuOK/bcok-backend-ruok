@@ -4,6 +4,7 @@ import { PrismaService } from '../../prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ContactService } from '../contact/contact.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -12,6 +13,7 @@ export class AuthService {
     private usersService: UsersService,
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private contactService: ContactService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -31,9 +33,10 @@ export class AuthService {
         email: dto.email,
         password_hash: hashedPassword,
         full_name: dto.full_name,
-        phone_number: dto.phone_number,
       },
     });
+
+    const contact = this.contactService.create(user.user_id, {contact_phone: dto.phone_number});
 
     // 4. Tạo token cho user mới
     const payload = { email: user.email, sub: user.user_id };
