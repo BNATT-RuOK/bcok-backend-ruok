@@ -3,12 +3,14 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Param,
   Body,
   ParseIntPipe,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,7 +18,9 @@ import {
   ApiResponse,
   ApiBody,
   ApiParam,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -24,7 +28,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 @ApiTags('Users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   // ── GET /users ─────────────────────────────────────────────────────────────
   @Get()
@@ -36,6 +40,8 @@ export class UsersController {
 
   // ── GET /users/:id ─────────────────────────────────────────────────────────
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get user by ID' })
   @ApiParam({ name: 'id', type: Number, description: 'User ID', example: 1 })
   @ApiResponse({ status: 200, description: 'User found.' })
@@ -58,6 +64,8 @@ export class UsersController {
 
   // ── PUT /users/:id ─────────────────────────────────────────────────────────
   @Put(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a user', description: 'Update name and/or phone. Email cannot be changed.' })
   @ApiParam({ name: 'id', type: Number, description: 'User ID', example: 1 })
   @ApiBody({ type: UpdateUserDto })
@@ -72,6 +80,8 @@ export class UsersController {
 
   // ── DELETE /users/:id ──────────────────────────────────────────────────────
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a user' })
   @ApiParam({ name: 'id', type: Number, description: 'User ID', example: 1 })
   @ApiResponse({ status: 200, description: 'User deleted successfully.' })

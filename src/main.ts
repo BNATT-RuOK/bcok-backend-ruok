@@ -34,9 +34,11 @@ async function bootstrap() {
     .setVersion('1.0')
     .setContact('RuOK Team', '', 'support@ruok.app')
     .addTag('Health', 'Server health check')
+    .addTag('Auth', 'User authentication (Login, Register)')
     .addTag('Users', 'User management (CRUD)')
     .addTag('Emergency', 'SOS emergency alerts')
     .addTag('Check-in', 'Location check-in records')
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
