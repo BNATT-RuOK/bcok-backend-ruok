@@ -40,6 +40,8 @@ export class UsersController {
 
   // ── GET /users/:id ─────────────────────────────────────────────────────────
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get user by ID' })
   @ApiParam({ name: 'id', type: Number, description: 'User ID', example: 1 })
   @ApiResponse({ status: 200, description: 'User found.' })
@@ -78,6 +80,8 @@ export class UsersController {
 
   // ── DELETE /users/:id ──────────────────────────────────────────────────────
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a user' })
   @ApiParam({ name: 'id', type: Number, description: 'User ID', example: 1 })
   @ApiResponse({ status: 200, description: 'User deleted successfully.' })

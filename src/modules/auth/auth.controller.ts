@@ -1,22 +1,22 @@
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
+import { CreateUserDto } from '../users/dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   // ── POST /auth/register ──────────────────────────────────────────────────
   @Post('register')
   @ApiOperation({ summary: 'Register a new account', description: 'Create a new account and return a JWT token.' })
-  @ApiBody({ type: RegisterDto })
+  @ApiBody({ type: CreateUserDto })
   @ApiResponse({ status: 201, description: 'User successfully registered.' })
   @ApiResponse({ status: 400, description: 'Invalid data provided.' })
   @ApiResponse({ status: 409, description: 'Email already exists.' })
-  register(@Body() dto: RegisterDto) {
+  register(@Body() dto: CreateUserDto) {
     return this.authService.register(dto);
   }
 

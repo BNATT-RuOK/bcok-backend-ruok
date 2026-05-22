@@ -7,12 +7,13 @@ import {
 import { PrismaService } from '../../prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   // ── CREATE ─────────────────────────────────────────────────────────────────
   async create(dto: CreateUserDto) {
@@ -24,13 +25,41 @@ export class UsersService {
       throw new ConflictException(`Email "${dto.email}" is already registered`);
     }
 
-    const user = await this.prisma.uSER.create({
-      data: {
-        email: dto.email,
-        full_name: dto.full_name,
-        phone_number: dto.phone_number,
-        // password_hash sẽ do AuthService set khi đăng ký
-      },
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(dto.password, saltRounds);
+
+    // Tạo user mới và contact trong một database transaction để đảm bảo tính nguyên tử (atomic)
+    const user = await this.prisma.$transaction(async (tx) => {
+      const newUser = await tx.uSER.create({
+        data: {
+          email: dto.email,
+          password_hash: hashedPassword,
+          full_name: dto.full_name,
+        },
+      });
+
+      if (dto.phone_number) {
+        // Kiểm tra xem contact đã tồn tại chưa trước khi tạo
+        const contactExists = await tx.cONTACT.findUnique({
+          where: {
+            user_id_contact_phone: {
+              user_id: newUser.user_id,
+              contact_phone: dto.phone_number,
+            },
+          },
+        });
+
+        if (!contactExists) {
+          await tx.cONTACT.create({
+            data: {
+              user_id: newUser.user_id,
+              contact_phone: dto.phone_number,
+            },
+          });
+        }
+      }
+
+      return newUser;
     });
 
     this.logger.log(`Created user #${user.user_id} – ${user.full_name}`);

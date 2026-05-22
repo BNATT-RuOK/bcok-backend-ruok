@@ -9,14 +9,17 @@ import { PrismaService } from '../../prisma.service';
 import { CreateContactDto } from './dto/create-contact.dto';
 import { UpdateContactDto } from './dto/update-contact.dto';
 
+import { Prisma } from '@prisma/client';
+
 @Injectable()
 export class ContactService {
   private readonly logger = new Logger(ContactService.name);
 
   constructor(private readonly prisma: PrismaService) { }
 
-  async create(userId: number, dto: CreateContactDto) {
-    const exists = await this.prisma.cONTACT.findUnique({
+  async create(userId: number, dto: CreateContactDto, tx?: Prisma.TransactionClient) {
+    const prismaClient = tx || this.prisma;
+    const exists = await prismaClient.cONTACT.findUnique({
       where: {
         user_id_contact_phone: {
           user_id: userId,
@@ -29,7 +32,7 @@ export class ContactService {
       throw new ConflictException(`Contact with phone ${dto.contact_phone} already exists for this user`);
     }
 
-    const contact = await this.prisma.cONTACT.create({
+    const contact = await prismaClient.cONTACT.create({
       data: {
         user_id: userId,
         contact_phone: dto.contact_phone,
