@@ -1,10 +1,6 @@
-import { IsInt, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsUrl } from 'class-validator';
 
 export class CreateEmergencyDto {
-  @IsInt({ message: 'User ID không hợp lệ' })
-  @IsNotEmpty()
-  userId: number;
-
   @IsNumber({}, { message: 'Vĩ độ phải là số' })
   @IsOptional()
   latitude?: number;
@@ -13,7 +9,11 @@ export class CreateEmergencyDto {
   @IsOptional()
   longitude?: number;
 
-  @IsString()
+  @IsUrl({}, { message: 'Photo URL không hợp lệ' })
   @IsOptional()
   photoUrl?: string;
+
+  @IsUrl({}, { message: 'Audio URL không hợp lệ' })
+  @IsOptional()
+  audioUrl?: string;
 }

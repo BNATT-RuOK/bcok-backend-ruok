@@ -20,7 +20,7 @@ export class NotificationService {
         });
     }
 
-    async sendPushNotification(pushToken: string, title: string, body: string) {
+    async sendPushNotification(pushToken: string, title: string, body: string, sosId?: number, photoUrl?: string, audioUrl?: string) {
         if (!Expo.isExpoPushToken(pushToken)) {
             this.logger.warn(`Push token: ${pushToken} khong hop le!`);
             return;
@@ -31,7 +31,7 @@ export class NotificationService {
             title: title,
             body: body,
             priority: 'high',
-            data: {screen: 'SosDetail'},
+            data: { screen: 'SosDetail', sosId, photoUrl, audioUrl },
         }];
 
         try { //Chia nhỏ các mảng tin nhắn lớn
@@ -45,7 +45,7 @@ export class NotificationService {
         }
     }
 
-    async sendAlertEmail(toEmail: string, subject: string, message: string) {
+    async sendAlertEmail(toEmail: string, subject: string, message: string, photoUrl?: string, audioUrl?: string) {
         try {
             await this.transporter.sendMail({
                 from: `"RuOK Safety Alert" <${process.env.BREVO_SENDER}>`,
@@ -58,6 +58,8 @@ export class NotificationService {
             </div>
             <div style="padding: 20px; font-size: 16px; color: #333333; line-height: 1.6;">
                 ${message}
+                ${photoUrl ? `<div style="text-align:center;margin:12px 0"><img src="${photoUrl}" style="max-width:100%;border-radius:8px;" alt="Ảnh hiện trường" /></div>` : ''}
+                ${audioUrl ? `<div style="text-align:center;margin:8px 0"><a href="${audioUrl}" style="background:#ff4d4f;color:#fff;padding:8px 18px;border-radius:6px;text-decoration:none;font-size:14px;">🎙️ Nghe ghi âm khẩn cấp</a></div>` : ''}
             </div>
             <div style="background-color: #f9f9f9; padding: 10px; text-align: center; font-size: 12px; color: #888;">
               Tin nhắn tự động từ nền tảng kết nối an toàn sinh viên RuOK.<br>Vui lòng không trả lời email này.
@@ -72,4 +74,5 @@ export class NotificationService {
 
     }
 }
+
 

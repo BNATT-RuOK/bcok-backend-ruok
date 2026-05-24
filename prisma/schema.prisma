@@ -52,6 +52,7 @@ model SOS_ALERT {
   latitude     Decimal?       @db.Decimal
   longitude    Decimal?       @db.Decimal
   photo_url    String?        @db.VarChar
+  audio_url    String?        @db.VarChar
   status       String?        @db.VarChar
   NOTIFICATION NOTIFICATION[]
   USER         USER?          @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
