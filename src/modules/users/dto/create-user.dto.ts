@@ -27,7 +27,6 @@ export class CreateUserDto {
 
   @ApiPropertyOptional({ example: '0901234567', description: 'Vietnamese phone number' })
   @IsString()
-  @IsOptional()
   @Matches(/^(\+84|0)[3-9]\d{8}$/, { message: 'Invalid Vietnamese phone number' })
   phone_number: string;
 }
