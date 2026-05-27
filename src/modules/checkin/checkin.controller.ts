@@ -1,10 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Req, UseGuards } from '@nestjs/common';
 import { CheckinService } from './checkin.service';
 import { CreateCheckinDto } from './dto/create-checkin.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('checkin')
 export class CheckinController {
-  constructor(private readonly checkinService: CheckinService) {}
+  constructor(private readonly checkinService: CheckinService) { }
 
   @Post()
   async create(@Body() createCheckinDto: CreateCheckinDto) {
@@ -12,8 +14,11 @@ export class CheckinController {
   }
 
   @Get()
-  async findAll() {
-    return await this.checkinService.findAll();
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async findAll(@Req() req: any) {
+    const userId = req.user.userId;
+    return await this.checkinService.findAll(userId);
   }
 
   // API khi User (SV) xac nhan an toan tren app (FE)
