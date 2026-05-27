@@ -11,10 +11,10 @@ export class CheckinService {
   constructor(
     private prisma: PrismaService,
     private notificationService: NotificationService
-  ) {}
+  ) { }
 
   // ── CREATE ─────────────────────────────────────────────────────────────────
-async create(dto: CreateCheckinDto) {
+  async create(dto: CreateCheckinDto) {
     const newCheckin = await this.prisma.cHECKIN.create({
       data: {
         user_id: dto.userId, // Map tu DTO (camelCase) sang DB (snake_case)
@@ -26,10 +26,30 @@ async create(dto: CreateCheckinDto) {
     this.logger.log(`Đã tạo Check-in (ID: ${newCheckin.checkin_id}) cho User #${dto.userId}`);
     return newCheckin;
   }
-async findAll() {
-    return await this.prisma.cHECKIN.findMany({
-      orderBy: { scheduled_time: 'desc' } // Sắp xếp check-in mới nhất lên đầu
-    });
+  async findAll(userId: number) {
+    // return await this.prisma.cHECKIN.findMany({
+    // where: { user_id: userId },
+    // orderBy: { scheduled_time: 'desc' } // Sắp xếp check-in mới nhất lên đầu
+    const checkins = await this.prisma.$queryRaw`
+        SELECT 
+          c.*,
+          COALESCE(con.contact_name, u.full_name, con.email, u.email) as name,
+          con.relationship as relationship
+        FROM "CHECKIN" c
+        LEFT JOIN "USER" u ON c.user_id = u.user_id
+        LEFT JOIN "CONTACT" con ON u.phone_number = con.contact_phone AND con.user_id = ${userId}
+        WHERE 
+          c.user_id = ${userId}
+          
+          -- Check-in của những user nằm trong danh bạ của bản thân
+          OR c.user_id IN (
+            SELECT usr.user_id 
+            FROM "CONTACT" con JOIN "USER" usr ON con.contact_phone = usr.phone_number
+          )
+
+        ORDER BY c."scheduled_time" DESC;
+        `;
+    return checkins;
   }
 
   // ──UPDATE TO SAFE ─────────────────────────────────────────────────────
@@ -57,7 +77,7 @@ async findAll() {
       // Lấy các checkin có lịch hẹn (scheduled_time) đã qua và status đang là 'PENDING'
       const missedCheckins = await this.prisma.cHECKIN.findMany({
         where: {
-          status: 'PENDING', 
+          status: 'PENDING',
           scheduled_time: {
             lt: currentTime, // Thời gian hẹn < Thời gian hiện tại
           },
@@ -70,9 +90,9 @@ async findAll() {
           },
         },
       });
-    if (missedCheckins.length === 0) return;
-    // XỬ LÝ CHECK-IN LỠ HẸN
-    for (const checkin of missedCheckins) {
+      if (missedCheckins.length === 0) return;
+      // XỬ LÝ CHECK-IN LỠ HẸN
+      for (const checkin of missedCheckins) {
         const userName = checkin.USER?.full_name || checkin.USER?.email || 'Sinh viên';
         this.logger.warn(`Phat hien lo hen checkin: User ID ${checkin.user_id} (${userName})`);
         // Cap nhat thanh MISSED (tranh bi quet trung)
@@ -121,18 +141,18 @@ async findAll() {
           // Gửi Email nếu người thân có đăng ký email
           if (contact.email)
             await this.notificationService.sendAlertEmail(contact.email, alertTitle, alertMsg);
-          
+
           //Luu lich su thong bao vao database
           await this.prisma.nOTIFICATION.create({
             data: {
               sos_id: newSosAlert.sos_id,
               user_id: checkin.user_id,
               contact_phone: contact.contact_phone,
-              notification_type: 'EMAIL', 
+              notification_type: 'EMAIL',
               status: 'SENT',
             },
           });
-          
+
           this.logger.log(`Đã lưu lịch sử báo động cho liên hệ có SĐT: ${contact.contact_phone}`);
         }
       }

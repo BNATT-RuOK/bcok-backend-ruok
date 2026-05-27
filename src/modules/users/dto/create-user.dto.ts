@@ -25,9 +25,10 @@ export class CreateUserDto {
   @IsOptional()
   full_name?: string;
 
-  @ApiProperty({ example: '0901234567', description: "Contact person's phone number" })
+  @ApiPropertyOptional({ example: '0901234567', description: "Contact person's phone number" })
   @IsString()
-  @IsNotEmpty({ message: 'Contact phone number cannot be empty' })
+  // @IsNotEmpty({ message: 'Contact phone number cannot be empty' })
+  @IsOptional()
   @Matches(/^(\+84|0)[3-9]\d{8}$/, { message: 'Invalid Vietnamese phone number' })
-  phone_number: string;
+  phone_number?: string;
 }

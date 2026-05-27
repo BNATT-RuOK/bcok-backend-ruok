@@ -18,14 +18,14 @@ model CHECKIN {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model CONTACT {
-  user_id       Int
-  contact_phone String         @db.VarChar
-  email         String?        @db.VarChar
-  contact_name  String?        @db.VarChar
-  relationship  String?        @db.VarChar
-  expo_push_token   String?    @db.VarChar
-  USER          USER           @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
-  NOTIFICATION  NOTIFICATION[]
+  user_id         Int
+  contact_phone   String         @db.VarChar
+  email           String?        @db.VarChar
+  contact_name    String?        @db.VarChar
+  relationship    String?        @db.VarChar
+  expo_push_token String?        @db.VarChar
+  USER            USER           @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+  NOTIFICATION    NOTIFICATION[]
 
   @@id([user_id, contact_phone])
 }
@@ -40,7 +40,7 @@ model NOTIFICATION {
   sent_at           DateTime?  @default(now()) @db.Timestamptz(6)
   status            String?    @db.VarChar
   SOS_ALERT         SOS_ALERT? @relation(fields: [sos_id], references: [sos_id], onDelete: NoAction, onUpdate: NoAction)
-  CONTACT           CONTACT?   @relation(fields: [user_id, contact_phone], references: [user_id, contact_phone], onDelete: NoAction, onUpdate: NoAction)
+  CONTACT           CONTACT?   @relation(fields: [user_id, contact_phone], references: [user_id, contact_phone], onDelete: Cascade, onUpdate: NoAction)
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -52,8 +52,8 @@ model SOS_ALERT {
   latitude     Decimal?       @db.Decimal
   longitude    Decimal?       @db.Decimal
   photo_url    String?        @db.VarChar
-  audio_url    String?        @db.VarChar
   status       String?        @db.VarChar
+  audio_url    String?        @db.VarChar
   NOTIFICATION NOTIFICATION[]
   USER         USER?          @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
 }
