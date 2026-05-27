@@ -44,7 +44,7 @@ export class CheckinService {
           -- Check-in của những user nằm trong danh bạ của bản thân
           OR c.user_id IN (
             SELECT usr.user_id 
-            FROM "CONTACT" con JOIN "USER" usr ON con.contact_phone = usr.phone_number
+            FROM "CONTACT" con JOIN "USER" usr ON con.contact_phone = usr.phone_number AND con.user_id = ${userId}
           )
 
         ORDER BY c."scheduled_time" DESC;
