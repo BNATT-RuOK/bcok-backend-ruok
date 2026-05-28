@@ -26,12 +26,12 @@ export class CheckinController {
   }
 
   // API khi User (SV) xac nhan an toan tren app (FE)
-  @Patch(':id/safe')
+  @Patch('/safe')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  async markAsSafe(@Req() req: any, @Param('id') id: string) {
+  async markAsSafe(@Req() req: any) {
     const userId = req.user.userId;
-    return await this.checkinService.markAsSafe(userId, +id);
+    return await this.checkinService.markAsSafe(userId);
   }
 
   @Patch('/scheduled-time')

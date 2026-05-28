@@ -57,22 +57,25 @@ export class CheckinService {
   }
 
   // ──UPDATE TO SAFE ─────────────────────────────────────────────────────
-  async markAsSafe(userId: number, checkinId: number) {
-    const checkin = await this.prisma.cHECKIN.findUnique({ where: { checkin_id: checkinId } });
-    if (!checkin) throw new NotFoundException('Không tìm thấy lượt Check-in này');
-    if (checkin.user_id !== userId) {
-      throw new ForbiddenException('Bạn không có quyền thay đổi Check-in của người khác');
-    }
-
-    const updated = await this.prisma.cHECKIN.update({
-      where: { checkin_id: checkinId },
-      data: {
-        status: CheckinStatus.SAFE,
-        actual_time: new Date(), // Ghi nhan thoi gian xac nhan an toan
-      },
+  async markAsSafe(userId: number) {
+    const checkins = await this.prisma.cHECKIN.findMany({
+      where: { user_id: userId, status: { in: [CheckinStatus.PENDING, CheckinStatus.IN_TRANSIT] } },
+      orderBy: { scheduled_time: 'desc' }
     });
-    this.logger.log(`Check-in ID: ${checkinId} đã được đánh dấu AN TOÀN.`);
-    return updated;
+    if (checkins.length == 0) {
+      return { message: 'Bạn không có lượt check-in nào' };
+    }
+    for (const checkin of checkins) {
+      const updated = await this.prisma.cHECKIN.update({
+        where: { checkin_id: checkin.checkin_id },
+        data: {
+          status: CheckinStatus.SAFE,
+          actual_time: new Date(), // Ghi nhan thoi gian xac nhan an toan
+        },
+      });
+      this.logger.log(`Check-in ID: ${checkin.checkin_id} đã được đánh dấu AN TOÀN.`);
+    }
+    return { message: 'Bạn đã xác nhận an toàn' };
   }
 
 
