@@ -7,13 +7,18 @@ import {
 import { PrismaService } from '../../prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { TimeService } from './time.service';
+import { CheckinService } from '../checkin/checkin.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly timeService: TimeService,
+    private readonly checkinService: CheckinService) { }
 
   // ── CREATE ─────────────────────────────────────────────────────────────────
   async create(dto: CreateUserDto) {
@@ -30,11 +35,15 @@ export class UsersService {
 
     // Tạo user mới và contact trong một database transaction để đảm bảo tính nguyên tử (atomic)
     const user = await this.prisma.$transaction(async (tx) => {
+      const nextCheckinTime = new Date(Date.now() + 60 * 60 * 1000)
+      const sos_timeout_mins = 12 * 60;
       const newUser = await tx.uSER.create({
         data: {
           email: dto.email,
           password_hash: hashedPassword,
           full_name: dto.full_name,
+          checkin_interval_mins: nextCheckinTime,
+          sos_timeout_mins
         },
       });
 
@@ -59,10 +68,12 @@ export class UsersService {
         }
       }
 
+      await this.checkinService.create(newUser.user_id, {}, tx);
+
       return newUser;
     });
 
-    this.logger.log(`Created user #${user.user_id} – ${user.full_name}`);
+    this.logger.log(`Created user #${user.user_id} - ${user.full_name}`);
 
     return user;
   }
@@ -101,7 +112,11 @@ export class UsersService {
     if (!user) {
       throw new NotFoundException(`User #${id} not found`);
     }
-    return user;
+
+    return {
+      ...user,
+      checkin_interval_mins: this.timeService.formatToTimeString(user.checkin_interval_mins),
+    };
   }
 
   // ── FIND BY EMAIL (dùng cho AuthService) ──────────────────────────────────
@@ -116,13 +131,15 @@ export class UsersService {
   async update(id: number, dto: UpdateUserDto) {
     await this.findOne(id); // Kiểm tra user tồn tại
 
+    const nextCheckinTime = this.timeService.getNextOccurrence(dto.checkin_interval_mins);
+
     const updated = await this.prisma.uSER.update({
       where: { user_id: id },
       data: {
         ...(dto.full_name && { full_name: dto.full_name }),
         ...(dto.phone_number && { phone_number: dto.phone_number }),
         ...(dto.checkin_interval_mins !== undefined && {
-          checkin_interval_mins: dto.checkin_interval_mins,
+          checkin_interval_mins: nextCheckinTime,
         }),
         ...(dto.sos_timeout_mins !== undefined && {
           sos_timeout_mins: dto.sos_timeout_mins,
@@ -138,6 +155,8 @@ export class UsersService {
         created_at: true,
       },
     });
+
+    await this.checkinService.updateScheduledTime(id, { scheduledTime: nextCheckinTime })
 
     this.logger.log(`Updated user #${id}`);
     return updated;

@@ -13,11 +13,10 @@ export class UpdateUserDto {
   @Matches(/^(\+84|0)[3-9]\d{8}$/, { message: 'phone_number must be a valid Vietnamese phone number' })
   phone_number?: string;
 
-  @ApiPropertyOptional({ example: 60, description: 'Check-in interval (minutes)' })
-  @IsInt()
-  @Min(1)
+  @ApiPropertyOptional({ example: "08:00 PM", description: 'Check-in interval (String HH:MM AM/PM)' })
+  @IsString()
   @IsOptional()
-  checkin_interval_mins?: number;
+  checkin_interval_mins?: string;
 
   @ApiPropertyOptional({ example: 10, description: 'SOS timeout (minutes)' })
   @IsInt()

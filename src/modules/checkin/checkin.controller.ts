@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Req, UseGuards } from '@nestjs/common';
 import { CheckinService } from './checkin.service';
 import { CreateCheckinDto } from './dto/create-checkin.dto';
+import { UpdateScheduledTimeDto } from './dto/update-scheduled-time.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
 
@@ -9,8 +10,11 @@ export class CheckinController {
   constructor(private readonly checkinService: CheckinService) { }
 
   @Post()
-  async create(@Body() createCheckinDto: CreateCheckinDto) {
-    return await this.checkinService.create(createCheckinDto);
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async create(@Req() req: any, @Body() createCheckinDto: CreateCheckinDto) {
+    const userId = req.user.userId;
+    return await this.checkinService.create(userId, createCheckinDto);
   }
 
   @Get()
@@ -23,7 +27,18 @@ export class CheckinController {
 
   // API khi User (SV) xac nhan an toan tren app (FE)
   @Patch(':id/safe')
-  async markAsSafe(@Param('id') id: string) {
-    return await this.checkinService.markAsSafe(+id);
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async markAsSafe(@Req() req: any, @Param('id') id: string) {
+    const userId = req.user.userId;
+    return await this.checkinService.markAsSafe(userId, +id);
+  }
+
+  @Patch('/scheduled-time')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async updateScheduledTime(@Req() req: any, @Body() dto: UpdateScheduledTimeDto,) {
+    const userId = req.user.userId;
+    return await this.checkinService.updateScheduledTime(userId, dto);
   }
 }
