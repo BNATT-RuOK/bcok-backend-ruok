@@ -1,4 +1,5 @@
-import { IsInt, IsNotEmpty, IsOptional, IsEnum, IsDateString } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsEnum, IsDateString } from 'class-validator';
 
 // Định nghĩa Enum cho status khớp với DB (Có thể mở rộng thêm)
 export enum CheckinStatus {
@@ -9,14 +10,13 @@ export enum CheckinStatus {
 }
 
 export class CreateCheckinDto {
-  @IsInt({ message: 'User ID phải là một số nguyên' })
-  @IsNotEmpty({ message: 'Không được bỏ trống User ID' })
-  userId: number; // FE gui len camelCase
 
+  @ApiPropertyOptional({ example: '2022-01-01T00:00:00.000Z', description: 'Scheduled time' })
   @IsDateString({}, { message: 'Thời gian dự kiến phải đúng chuẩn ISO 8601' })
   @IsOptional()
   scheduledTime?: string; // FE gui len camelCase
 
+  @ApiPropertyOptional({ enum: CheckinStatus, description: 'Status of the check-in' })
   @IsEnum(CheckinStatus, { message: 'Trạng thái không hợp lệ' })
   @IsOptional()
   status?: CheckinStatus;
